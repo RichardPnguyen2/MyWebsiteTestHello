@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Welcome to my web</title>
+  <link rel="stylesheet" href="style.css">
+  <link href="https://fonts.cdnfonts.com/css/predator-movie" rel="stylesheet">
+  <style>
+    @import url('https://fonts.cdnfonts.com/css/predator-movie');
+  </style>
+  <!-- <style>
+
+  </style> -->
+</head>
+
+<body>
+  <div id="top">
+    asdfasdfasdf
+  </div>
+
+
+
+  <a href="#bottom_text"> This is a link </a> <br>
+  <a href="golden.html"> new page</a>
+
+
+  <div class="container2">
+    <div class="column">Column 1</div>
+    <div class="column">Column 2</div>
+    <div class="column">Column 3</div>
+  </div>
+
+
+
+
+  <h1 id="asdfasdf">This is a <span id="specialHeading">Heading</span> </h1>
+
+
+
+  <h1 id="title2" class="titles">This is a Heading</h1>
+  <h1 id="title3" class="titles">This is a Heading</h1>
+  <h1 id="title4" class="other-titles">This is a Heading</h1>
+
+
+
+  <div class="container">
+
+
+    <p id="first-paragraph">This is a paragraph.</p>
+    <ol>
+      <p>This is a paragraph inside a list</p>
+      <li>
+        my item with
+        <ul>
+          <li>Item 1.1</li>
+          <li>Item 1.2</li>
+        </ul>
+        my item haha
+        <ol>
+          <li>Item 1.1</li>
+          <li>Item 1.2</li>
+        </ol>
+
+      </li>
+      <li>Item 2</li>
+      <li>Item 3</li>
+    </ol>
+    <ul>
+      <li>Item A</li>
+      <li>Item B</li>
+      <li>Item C</li>
+    </ul>
+    <h1 id="bottom_text">other stuff here!!!!</h1>
+
+
+  </div>
+
+
+
+  <table>
+    <thead>
+      <tr>
+        <th>
+          First Column
+        </th>
+        <th>
+          Second Column
+        </th>
+
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr>
+        <td>
+          Data 1
+        </td>
+        <td>
+          Data 2
+        </td>
+      </tr>
+    </tbody>
+
+
+    <!-- this is a comment -->
+
+  </table>
+
+
+  </br>
+  </br>
+  </br>
+  </br>
+
+
+
+
+
+
+  <div class="plantImage">
+    <img src="Piranha Plant.jpg" alt="hello" width="160" height="90" />
+  </div>
+
+  <br>
+  <div class="missileImage">
+    <img id="mis" src="https://i.kym-cdn.com/entries/icons/original/000/023/170/tom.jpg" width="100" height="100" />
+  </div>
+
+
+
+  <div class="section2">
+    <div class="boxContainer">
+      <div class="boxColumn">
+        <h1>Title</h1>
+        <p>Subtitle</p>
+      </div>
+      <div class="box"> <img src="https://i.kym-cdn.com/entries/icons/original/000/023/170/tom.jpg" width="100"
+          height="100" />
+      </div>
+
+    </div>
+  </div>
+
+  <br>
+  <br>
+  <br>
+  <br>
+
+
+  <form id="quiz-form">
+    <label> What is 2 + 2? </label><br>
+    <label for="text-answer">Type your answer</label><br>
+    <input id="text-answer" type="text" name="quiz_text"><br><br>
+    <!-- <input type="text" name="quiz" value="7"> 3 <br>
+
+    <input type="radio" name="quiz" value="3"> 3 <br>
+    <input type="radio" name="quiz" value="4"> 4 <br>
+
+    <select>
+      <option value="dog"> Dog </option>
+      <option value="cat"> Cat </option>
+    </select> -->
+    <button type="submit">Submit Answer</button>
+  </form>
+
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <canvas id="myCanvas" width="800" height="300"></canvas>
+
+  <script>
+    document.getElementById("quiz-form").addEventListener("submit", function (event) {
+      event.preventDefault();
+
+      const textAnswer = document.querySelector('input[name="quiz_text"]').value;
+
+
+      if (textAnswer === "4") {
+        alert("Correct!");
+      } else {
+        alert("Incorrect!");
+      }
+
+      console.log("form submitted");
+    })
+
+    const canvas = document.getElementById("myCanvas");
+    const ctx = canvas.getContext("2d");
+
+
+    ctx.fillStyle = "blue";
+    ctx.fillRect(50, 50, 100, 75);
+
+    ctx.beginPath();
+    ctx.arc(200, 150, 50, 0, Math.PI * 2);
+    ctx.fillStyle = "red";
+    ctx.fill();
+
+    ctx.font = "20x Arial";
+    ctx.fillStyle = "black";
+    ctx.fillText("Hello, Canvas!", 120, 50)
+
+    const img = document.getElementById("mis");
+    img.onload = () => {
+      ctx.drawImage(img, 10, 10, 100, 100);
+    }
+
+    canvas.addEventListener("click", (e) => {
+      const rect = canvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      ctx.fillStyle = "green";
+      ctx.fillRect(x - 5, y - 5, 10, 10);
+    })
+
+    let x = 0;
+    let vel = 2;
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = "purple";
+      ctx.fillRect(x, 100, 50, 50);
+
+      if (x > canvas.width || x < 0) {
+        vel = -vel
+      }
+      x = x - vel
+      requestAnimationFrame(draw)
+    }
+
+    draw();
+
+  </script>
+
+
+
+  <!-- <h1>Table of Contents</h1>
+  <ul>
+    <li><a href="#section1">Go to Section 1</a></li>
+    <li><a href="#section2">Go to Section 2</a></li>
+    <li><a href="#section3">Go to Section 3</a></li>
+  </ul>
+
+  <h2 id="section1">Section 1</h2>
+  <p>This is the first section.</p>
+
+  <h2 id="section2">Section 2</h2>
+  <p>This is the second section.</p>
+
+  <h2 id="section3">Section 3</h2>
+  <p>This is the third section.</p>
+  <p><a href="#top">Back to top</a></p> -->
+
+</body>
+
+</html>

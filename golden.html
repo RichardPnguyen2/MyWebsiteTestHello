@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>Golden Ratio Fluid Simulation</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+    }
+  </style>
+</head>
+
+<body>
+  <div
+    style="position: fixed; top: 10px; left: 10px; z-index: 10; background: rgba(255,255,255,0.8); padding: 10px; border-radius: 8px;">
+    <label>
+      Mouse Radius:
+      <input id="radiusSlider" type="range" min="1" max="50" value="10" />
+      <span id="radiusValue">10</span>
+    </label><br />
+    <label>
+      Velocity Damping:
+      <input id="dampingSlider" type="range" min="0.90" max="1.00" step="0.001" value="0.95" />
+      <span id="dampingValue">0.95</span>
+    </label>
+
+  </div>
+
+
+  <canvas id="glcanvas"></canvas>
+
+  <script>
+    // Config
+    // const GRID_SIZE = 128;
+    const GRID_SIZE = 128;
+    const GOLDEN_RATIO = (1 + Math.sqrt(5)) / 2;
+    const TARGET_WHITE_RATIO = GOLDEN_RATIO / (1 + GOLDEN_RATIO);
+    const VELOCITY_DAMPING = 0.99; // slows velocities over time
+    let mouseRadius = 10;
+    let velocityDamping = 0.95;
+
+
+    const canvas = document.getElementById('glcanvas');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    const ctx = canvas.getContext('2d');
+
+    let grid = new Uint8Array(GRID_SIZE * GRID_SIZE);
+    let velocityX = new Float32Array(GRID_SIZE * GRID_SIZE);
+    let velocityY = new Float32Array(GRID_SIZE * GRID_SIZE);
+
+    // Initialize grid with golden ratio of white pixels
+    function initGrid() {
+      let totalPixels = GRID_SIZE * GRID_SIZE;
+      let whiteCount = Math.round(totalPixels * TARGET_WHITE_RATIO);
+      let blackCount = totalPixels - whiteCount;
+
+      let arr = new Array(totalPixels);
+      for (let i = 0; i < whiteCount; i++) arr[i] = 1;
+      for (let i = whiteCount; i < totalPixels; i++) arr[i] = 0;
+      // Shuffle
+      //   for(let i=totalPixels - 1; i > 0; i--) {
+      //     let j = Math.floor(Math.random() * (i+1));
+      //     [arr[i], arr[j]] = [arr[j], arr[i]];
+      //   }
+      grid.set(arr);
+    }
+
+    // Helper to convert (x,y) to index
+    function idx(x, y) {
+      return y * GRID_SIZE + x;
+    }
+
+    // Clamp helper
+    function clamp(v, min, max) {
+      return v < min ? min : v > max ? max : v;
+    }
+
+    // User interaction: dragging adds velocity to pixels
+    let isDragging = false;
+    let lastMouse = null;
+    canvas.addEventListener('mousedown', e => {
+      isDragging = true;
+      lastMouse = {x: e.clientX, y: e.clientY};
+    });
+    canvas.addEventListener('mouseup', e => {
+      isDragging = false;
+      lastMouse = null;
+    });
+    document.getElementById('radiusSlider').addEventListener('input', e => {
+      mouseRadius = parseInt(e.target.value);
+      document.getElementById('radiusValue').textContent = mouseRadius;
+    });
+
+    document.getElementById('dampingSlider').addEventListener('input', e => {
+      velocityDamping = parseFloat(e.target.value);
+      document.getElementById('dampingValue').textContent = velocityDamping.toFixed(3);
+    });
+
+    canvas.addEventListener('mousemove', e => {
+      if (!isDragging || !lastMouse) return;
+
+      let dx = e.clientX - lastMouse.x;
+      let dy = e.clientY - lastMouse.y;
+
+      // Map mouse coords to grid coords
+      let gridX = Math.floor((e.clientX / canvas.width) * GRID_SIZE);
+      let gridY = Math.floor((e.clientY / canvas.height) * GRID_SIZE);
+
+      // Add velocity around mouse pointer with some radius
+      let radius = mouseRadius;
+      for (let y = gridY - radius; y <= gridY + radius; y++) {
+        if (y < 0 || y >= GRID_SIZE) continue;
+        for (let x = gridX - radius; x <= gridX + radius; x++) {
+          if (x < 0 || x >= GRID_SIZE) continue;
+          let distance = Math.hypot(x - gridX, y - gridY);
+          if (distance > radius) continue;
+
+          let influence = (radius - distance) / radius;
+          let i = idx(x, y);
+          velocityX[i] += dx * 0.2 * influence;
+          velocityY[i] += dy * 0.2 * influence;
+        }
+      }
+      lastMouse = {x: e.clientX, y: e.clientY};
+    });
+
+    // Advect grid pixels according to velocity field (simple semi-Lagrangian)
+    function advect() {
+      const newGrid = new Uint8Array(grid.length);
+      for (let y = 0; y < GRID_SIZE; y++) {
+        for (let x = 0; x < GRID_SIZE; x++) {
+          let i = idx(x, y);
+          let vx = velocityX[i];
+          let vy = velocityY[i];
+
+          // Backtrace position
+          let srcX = x - vx;
+          let srcY = y - vy;
+
+          // Clamp source coords
+          srcX = clamp(srcX, 0, GRID_SIZE - 1);
+          srcY = clamp(srcY, 0, GRID_SIZE - 1);
+
+          // Nearest neighbor sampling
+          let sx = Math.round(srcX);
+          let sy = Math.round(srcY);
+          let si = idx(sx, sy);
+          newGrid[i] = grid[si];
+        }
+      }
+      grid = newGrid;
+    }
+
+    // Dampen velocities to avoid infinite acceleration
+    function dampVelocities() {
+      for (let i = 0; i < velocityX.length; i++) {
+        velocityX[i] *= velocityDamping;
+        velocityY[i] *= velocityDamping;
+      }
+    }
+
+    // Correct global ratio by swapping random pixels if needed
+    function correctRatio() {
+      const total = grid.length;
+      let whiteCount = 0;
+      for (let i = 0; i < total; i++) {
+        if (grid[i] === 1) whiteCount++;
+      }
+      const desiredWhite = Math.round(total * TARGET_WHITE_RATIO);
+      let diff = desiredWhite - whiteCount;
+
+      if (diff === 0) return; // perfect ratio
+
+      // If we have too many whites, flip some whites to blacks
+      // If too few whites, flip some blacks to whites
+      let candidates = [];
+      for (let i = 0; i < total; i++) {
+        if (diff > 0 && grid[i] === 0) candidates.push(i);
+        if (diff < 0 && grid[i] === 1) candidates.push(i);
+      }
+
+      if (candidates.length === 0) return;
+
+      let flips = Math.min(Math.abs(diff), candidates.length);
+      for (let k = 0; k < flips; k++) {
+        let idxFlip = candidates[Math.floor(Math.random() * candidates.length)];
+        grid[idxFlip] = diff > 0 ? 1 : 0;
+        // remove flipped index from candidates to avoid duplicate flip
+        candidates = candidates.filter(v => v !== idxFlip);
+      }
+    }
+
+
+    function correctRatioBulge() {
+      const total = grid.length;
+      let whiteCount = 0;
+      for (let i = 0; i < total; i++) if (grid[i] === 1) whiteCount++;
+      const desiredWhite = Math.round(total * TARGET_WHITE_RATIO);
+      let diff = desiredWhite - whiteCount;
+
+      if (diff === 0) return;
+
+      // Find donor and receiver pixels
+      let donors = [];
+      let receivers = [];
+
+      for (let i = 0; i < total; i++) {
+        if (diff > 0 && grid[i] === 0) receivers.push(i); // need more white
+        if (diff < 0 && grid[i] === 1) donors.push(i);     // need to reduce white
+      }
+
+      let transfers = Math.min(Math.abs(diff), donors.length, receivers.length);
+      for (let i = 0; i < transfers; i++) {
+        let from = donors[i];
+        let to = receivers[i];
+
+        // Swap pixel labels (move mass instead of creating/destroying)
+        [grid[from], grid[to]] = [grid[to], grid[from]];
+      }
+    }
+
+
+    // Render the grid to canvas
+    function render() {
+      const imgData = ctx.createImageData(GRID_SIZE, GRID_SIZE);
+      for (let i = 0; i < grid.length; i++) {
+        let c = grid[i] === 1 ? 255 : 0;
+        imgData.data[i * 4 + 0] = c;
+        imgData.data[i * 4 + 1] = c;
+        imgData.data[i * 4 + 2] = c;
+        imgData.data[i * 4 + 3] = 255;
+      }
+      // Scale up small grid to full canvas size:
+      ctx.putImageData(imgData, 0, 0);
+      ctx.imageSmoothingEnabled = false;
+      ctx.drawImage(canvas, 0, 0, GRID_SIZE, GRID_SIZE, 0, 0, canvas.width, canvas.height);
+    }
+
+    function step() {
+      advect();
+      dampVelocities();
+      //   correctRatio();
+      correctRatioBulge();
+      render();
+      requestAnimationFrame(step);
+    }
+
+    initGrid();
+    step();
+
+  </script>
+</body>
+
+</html>
